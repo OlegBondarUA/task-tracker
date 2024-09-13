@@ -1,11 +1,16 @@
 from sqlalchemy.orm import Session
 import models
 import schemas
-from utils import get_password_hash
 
 
 def create_task(db: Session, task: schemas.TaskCreate):
-    db_task = models.Task(**task.dict())
+    db_task = models.Task(
+        title=task.title,
+        description=task.description,
+        status=task.status,
+        priority=task.priority,
+        responsible_person_id=task.responsible_person_id
+    )
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -21,8 +26,11 @@ def get_task(db: Session, task_id: int):
 
 
 def update_task(db: Session, task: models.Task, task_update: schemas.TaskUpdate):
-    for key, value in task_update.dict().items():
+    update_values = task_update.dict(exclude_unset=True)
+
+    for key, value in update_values.items():
         setattr(task, key, value)
+
     db.commit()
     db.refresh(task)
     return task
@@ -32,10 +40,6 @@ def delete_task(db: Session, task: models.Task):
     db.delete(task)
     db.commit()
     return task
-
-
-def get_user(db: Session, user_id: str):
-    return db.query(models.User).filter(models.User.id == user_id).first()
 
 
 def get_user_by_username(db: Session, username: str):

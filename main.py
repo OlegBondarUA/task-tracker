@@ -1,25 +1,18 @@
-import os
 import models
 import schemas
 import crud
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import jwt
-from datetime import datetime, timedelta
+from datetime import timedelta
 from sqlalchemy.orm import Session
-from typing import Optional
-from dotenv import load_dotenv
 
 from database import engine
 from security import get_current_user, get_admin_user
-from utils import get_password_hash, verify_password
+from utils import get_password_hash, verify_password, send_email_mock, create_access_token
 from dependencies import get_db
 
-load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 app = FastAPI()
@@ -56,7 +49,34 @@ def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(ge
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return crud.update_task(db=db, task=db_task, task_update=task)
+
+    updated_task = crud.update_task(db=db, task=db_task, task_update=task)
+
+    responsible_person = updated_task.responsible_person
+    if responsible_person:
+        send_email_mock(responsible_person.email, updated_task.title, updated_task.status.value)
+
+    return updated_task
+
+
+# Оновлення статусу задачі (доступ тільки для відповідального користувача)
+@app.patch("/tasks/{task_id}/status", dependencies=[Depends(get_current_user)])
+def update_task_status(task_id: int, status: models.TaskStatus, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    db_task = crud.get_task(db, task_id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Перевіряємо, чи є користувач відповідальним за задачу
+    if db_task.responsible_person_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update the task status")
+
+    db_task.status = status
+    db.commit()
+    db.refresh(db_task)
+
+    send_email_mock(current_user.email, db_task.title, db_task.status.value)
+
+    return db_task
 
 
 # Видалення задачі (доступ тільки для адміністратора)
@@ -66,17 +86,6 @@ def delete_task(task_id: int, db: Session = Depends(get_db), current_user: schem
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return crud.delete_task(db=db, task=db_task)
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
 
 
 # Реєстрація нового користувача

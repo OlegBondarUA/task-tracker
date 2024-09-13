@@ -1,14 +1,14 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
+from models import UserRole, TaskStatus
 
 
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
-    status: Optional[str] = "TODO"
+    status: Optional[TaskStatus] = TaskStatus.TODO
     priority: Optional[int] = 1
-    responsible_person: Optional[str] = None
-    executors: Optional[str] = None
+    responsible_person_id: Optional[int] = None
 
 
 class TaskCreate(TaskBase):
@@ -35,16 +35,12 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-    role: str = "user"
+    role: UserRole = UserRole.USER_DEFAULT
 
 
 class User(UserBase):
     id: int
-    role: str
+    role: UserRole
 
     class Config:
         orm_mode = True
-
-
-class TokenData(BaseModel):
-    username: str

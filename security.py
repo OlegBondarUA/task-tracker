@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from models import User
+from models import User, UserRole
 from dependencies import get_db
 
 load_dotenv()
@@ -34,7 +34,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 # Перевірка наявності ролі адміністратора
 def get_admin_user(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role != UserRole.USER_ADMIN:
         raise HTTPException(
             status_code=403, detail="Not enough privileges"
         )

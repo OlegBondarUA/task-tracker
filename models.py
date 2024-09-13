@@ -1,5 +1,18 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy.orm import relationship
 from database import Base
+import enum
+
+
+class UserRole(enum.Enum):
+    USER_DEFAULT = "user"
+    USER_ADMIN = "admin"
+
+
+class TaskStatus(enum.Enum):
+    TODO = "TODO"
+    IN_PROGRESS = "In progress"
+    DONE = "Done"
 
 
 class User(Base):
@@ -9,7 +22,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    role = Column(String, default="user")  # Роль користувача (admin або user)
+    role = Column(Enum(UserRole), default=UserRole.USER_DEFAULT)
+    tasks = relationship("Task", back_populates="responsible_person")
 
 
 class Task(Base):
@@ -18,7 +32,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String, nullable=True)
-    status = Column(String, default="TODO")
+    status = Column(Enum(TaskStatus), default=TaskStatus.TODO)
     priority = Column(Integer, default=1)
-    responsible_person = Column(String, nullable=True)
-    executors = Column(String, nullable=True)
+    responsible_person_id = Column(Integer, ForeignKey("users.id"))
+    responsible_person = relationship("User", back_populates="tasks")
