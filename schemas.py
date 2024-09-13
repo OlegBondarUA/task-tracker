@@ -31,14 +31,16 @@ class UserBase(BaseModel):
     email: str
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    username: str
+    email: str
     password: str
+    role: str = "user"
 
 
 class User(UserBase):
     id: int
-    is_active: bool
-    is_admin: bool
+    role: str
 
     class Config:
         orm_mode = True

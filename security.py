@@ -1,11 +1,13 @@
 import os
-import schemas
 
-from starlette import status
-from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from dotenv import load_dotenv
+from fastapi import Depends, HTTPException, status
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+
+from models import User
+from dependencies import get_db
 
 load_dotenv()
 
@@ -15,13 +17,25 @@ ALGORITHM = os.getenv("ALGORITHM")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> schemas.TokenData:
+# Отримання поточного користувача з токеном
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        token_data = schemas.TokenData(username=username)
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    return token_data
+    return user
+
+
+# Перевірка наявності ролі адміністратора
+def get_admin_user(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403, detail="Not enough privileges"
+        )
+    return current_user
