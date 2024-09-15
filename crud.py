@@ -26,7 +26,7 @@ def get_task(db: Session, task_id: int):
 
 
 def update_task(db: Session, task: models.Task, task_update: schemas.TaskUpdate):
-    update_values = task_update.dict(exclude_unset=True)
+    update_values = task_update.model_dump(exclude_unset=True)
 
     for key, value in update_values.items():
         setattr(task, key, value)

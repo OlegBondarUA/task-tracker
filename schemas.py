@@ -4,7 +4,7 @@ from models import UserRole, TaskStatus
 
 
 class TaskBase(BaseModel):
-    title: str
+    title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[TaskStatus] = TaskStatus.TODO
     priority: Optional[int] = 1
@@ -19,11 +19,15 @@ class TaskUpdate(TaskBase):
     pass
 
 
+class TaskStatusUpdate(BaseModel):
+    status: TaskStatus
+
+
 class Task(TaskBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -43,4 +47,4 @@ class User(UserBase):
     role: UserRole
 
     class Config:
-        orm_mode = True
+        from_attributes = True

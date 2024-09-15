@@ -32,7 +32,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-# Функція для мокапу відправки email
 def send_email_mock(responsible_person_email: str, task_title: str, new_status: str):
     print(f"Sending email to {responsible_person_email}...")
     print(f"Subject: Status update for task '{task_title}'")

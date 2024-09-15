@@ -24,7 +24,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Створення задачі (доступ для всіх авторизованих користувачів)
 @app.post("/tasks/", response_model=schemas.Task)
-def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db),
+                current_user: schemas.User = Depends(get_current_user)):
     return crud.create_task(db=db, task=task)
 
 
@@ -44,7 +45,7 @@ def read_task(task_id: int, db: Session = Depends(get_db), current_user: schemas
 
 
 # Оновлення задачі (доступ тільки для адміністратора)
-@app.put("/tasks/{task_id}", dependencies=[Depends(get_admin_user)])
+@app.patch("/tasks/{task_id}", dependencies=[Depends(get_admin_user)])
 def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(get_db)):
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
@@ -61,16 +62,16 @@ def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(ge
 
 # Оновлення статусу задачі (доступ тільки для відповідального користувача)
 @app.patch("/tasks/{task_id}/status", dependencies=[Depends(get_current_user)])
-def update_task_status(task_id: int, status: models.TaskStatus, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+def update_task_status(task_id: int, status_update: schemas.TaskStatusUpdate, db: Session = Depends(get_db),
+                       current_user: schemas.User = Depends(get_current_user)):
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Перевіряємо, чи є користувач відповідальним за задачу
     if db_task.responsible_person_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update the task status")
 
-    db_task.status = status
+    db_task.status = status_update.status
     db.commit()
     db.refresh(db_task)
 
