@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from models import UserRole, TaskStatus
 
@@ -9,16 +9,14 @@ class TaskBase(BaseModel):
     status: Optional[TaskStatus] = TaskStatus.TODO
     priority: Optional[int] = 1
     responsible_person_id: Optional[int] = None
-    executors: Optional[list[int]] = []
+    executors: Optional[List[int]] = []
+
+    class Config:
+        from_attributes = True
 
 
-class TaskCreate(BaseModel):
+class TaskCreate(TaskBase):
     title: str
-    description: Optional[str] = None
-    status: Optional[TaskStatus] = TaskStatus.TODO
-    priority: Optional[int] = 1
-    responsible_person_id: Optional[int] = None
-    executors: Optional[list[int]] = []
 
 
 class TaskUpdate(TaskBase):
@@ -31,20 +29,14 @@ class TaskStatusUpdate(BaseModel):
 
 class Task(TaskBase):
     id: int
-    executors: Optional[List[int]]
-
-    class Config:
-        from_attributes = True
 
 
 class UserBase(BaseModel):
     username: str
-    email: str
+    email: EmailStr
 
 
-class UserCreate(BaseModel):
-    username: str
-    email: str
+class UserCreate(UserBase):
     password: str
     role: UserRole = UserRole.USER_DEFAULT
 
@@ -52,6 +44,3 @@ class UserCreate(BaseModel):
 class User(UserBase):
     id: int
     role: UserRole
-
-    class Config:
-        from_attributes = True
