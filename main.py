@@ -25,8 +25,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Створення задачі (доступ для всіх авторизованих користувачів)
 @app.post("/tasks/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db),
-                current_user: schemas.User = Depends(get_current_user)):
-    return crud.create_task(db=db, task=task)
+                current_user: models.User = Depends(get_current_user)):
+    return crud.create_task(db=db, task=task, user_id=current_user.id)
 
 
 # Отримати список задач (доступ для всіх авторизованих користувачів)
@@ -41,34 +41,36 @@ def read_task(task_id: int, db: Session = Depends(get_db), current_user: schemas
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return db_task
+
+    task_response = {
+        "id": db_task.id,
+        "title": db_task.title,
+        "description": db_task.description,
+        "responsible_person_id": db_task.responsible_person_id,
+        "priority": db_task.priority,
+        "executors": [executor.id for executor in db_task.executors]
+    }
+
+    return task_response
 
 
 # Оновлення задачі (доступ тільки для адміністратора)
-@app.patch("/tasks/{task_id}", dependencies=[Depends(get_admin_user)])
-def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(get_db)):
-    db_task = crud.get_task(db, task_id=task_id)
-    if db_task is None:
+@app.patch("/tasks/{task_id}", response_model=schemas.Task)
+def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(get_db)):
+    updated_task = crud.update_task(db, task_id, task_update)
+    if not updated_task:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    updated_task = crud.update_task(db=db, task=db_task, task_update=task)
-
-    responsible_person = updated_task.responsible_person
-    if responsible_person:
-        send_email_mock(responsible_person.email, updated_task.title, updated_task.status.value)
-
     return updated_task
 
 
-# Оновлення статусу задачі (доступ тільки для відповідального користувача)
+# Оновлення статусу задачі (доступ тільки для зареєстрованого користувача таски)
 @app.patch("/tasks/{task_id}/status", dependencies=[Depends(get_current_user)])
 def update_task_status(task_id: int, status_update: schemas.TaskStatusUpdate, db: Session = Depends(get_db),
                        current_user: schemas.User = Depends(get_current_user)):
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    if db_task.responsible_person_id != current_user.id:
+    if db_task.responsible_person_id != current_user.id and current_user.id not in [executor.id for executor in db_task.executors]:
         raise HTTPException(status_code=403, detail="Not authorized to update the task status")
 
     db_task.status = status_update.status

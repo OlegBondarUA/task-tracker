@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Table
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
@@ -15,6 +15,13 @@ class TaskStatus(enum.Enum):
     DONE = "Done"
 
 
+task_executors = Table(
+    'task_executors', Base.metadata,
+    Column('task_id', Integer, ForeignKey('tasks.id')),
+    Column('user_id', Integer, ForeignKey('users.id'))
+)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -23,7 +30,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(Enum(UserRole), default=UserRole.USER_DEFAULT)
-    tasks = relationship("Task", back_populates="responsible_person")
+    tasks = relationship('Task', secondary=task_executors, back_populates='executors')
 
 
 class Task(Base):
@@ -35,4 +42,8 @@ class Task(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.TODO)
     priority = Column(Integer, default=1)
     responsible_person_id = Column(Integer, ForeignKey("users.id"))
-    responsible_person = relationship("User", back_populates="tasks")
+    responsible_person = relationship("User", back_populates="responsible_tasks")
+    executors = relationship('User', secondary=task_executors, back_populates='tasks')
+
+
+User.responsible_tasks = relationship('Task', back_populates='responsible_person')

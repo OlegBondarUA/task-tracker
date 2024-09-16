@@ -1,4 +1,5 @@
 import os
+from typing import Type
 
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # Отримання поточного користувача з токеном
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Type[User]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
