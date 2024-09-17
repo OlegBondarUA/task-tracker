@@ -57,7 +57,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Dep
     return updated_task
 
 
-@app.patch("/tasks/{task_id}/status", summary="Update Tasks Status (Access: Admin/User if he is an executor)")
+@app.patch("/tasks/{task_id}/status", summary="Update Tasks Status (Access: Admin/User, only can be performed only for the assignee)")
 def update_task_status(task_id: int, status_update: schemas.TaskStatusUpdate, db: Session = Depends(get_db),
                        current_user: schemas.User = Depends(get_current_user)):
     db_task = crud.get_task(db, task_id=task_id)
