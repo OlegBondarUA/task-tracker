@@ -22,7 +22,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @app.post("/tasks/", response_model=schemas.Task)
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db),
-                current_user: models.User = Depends(get_current_user)):
+                current_user: models.User = Depends(get_admin_user)):
     return crud.create_task(db=db, task=task, user_id=current_user.id)
 
 
