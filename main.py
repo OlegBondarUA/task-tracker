@@ -20,18 +20,18 @@ models.Base.metadata.create_all(bind=engine)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@app.post("/tasks/", response_model=schemas.Task)
+@app.post("/tasks/", response_model=schemas.Task, summary="Create Task (Access: Admin)")
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db),
                 current_user: models.User = Depends(get_admin_user)):
     return crud.create_task(db=db, task=task, user_id=current_user.id)
 
 
-@app.get("/tasks/")
+@app.get("/tasks/", summary="Read Tasks (Access: Admin/User)")
 def read_tasks(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     return crud.get_tasks(db)
 
 
-@app.get("/tasks/{task_id}", response_model=schemas.Task)
+@app.get("/tasks/{task_id}", response_model=schemas.Task, summary="Read Task ID (Access: Admin/User)")
 def read_task(task_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
@@ -48,7 +48,7 @@ def read_task(task_id: int, db: Session = Depends(get_db), current_user: schemas
     )
 
 
-@app.patch("/tasks/{task_id}", response_model=schemas.Task)
+@app.patch("/tasks/{task_id}", response_model=schemas.Task, summary="Update Task (Access: Admin)")
 def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(get_db),
                 current_user: schemas.User = Depends(get_admin_user)):
     updated_task = crud.update_task(db, task_id, task_update)
@@ -57,7 +57,7 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Dep
     return updated_task
 
 
-@app.patch("/tasks/{task_id}/status", dependencies=[Depends(get_current_user)])
+@app.patch("/tasks/{task_id}/status", summary="Update Tasks Status (Access: Admin/User if he is an executor)")
 def update_task_status(task_id: int, status_update: schemas.TaskStatusUpdate, db: Session = Depends(get_db),
                        current_user: schemas.User = Depends(get_current_user)):
     db_task = crud.get_task(db, task_id=task_id)
@@ -75,7 +75,7 @@ def update_task_status(task_id: int, status_update: schemas.TaskStatusUpdate, db
     return db_task
 
 
-@app.delete("/tasks/{task_id}", response_model=schemas.Task)
+@app.delete("/tasks/{task_id}", response_model=schemas.Task, summary="Delete Tasks (Access: Admin)")
 def delete_task(task_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_admin_user)):
     db_task = crud.get_task(db, task_id=task_id)
     if db_task is None:
