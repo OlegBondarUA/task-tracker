@@ -33,7 +33,12 @@ Additionally, there is a feature that simulates sending emails to task assignees
     ```bash
    http://127.0.0.1:8000/docs
    
-7. work verification and testing
+7. Create an .env file in the root of the project and create the following keys in it
+
+SECRET_KEY=a8u5T3j9R4nZ7mL1K2vQ6pX0eW9oB4rY7dV1sF3aC5hR8kL6wJ2iM4uO1tN7xP (make up your own secret key or use mine)
+ALGORITHM=HS256
+   
+8. work verification and testing
 
 In this section, you will set up users, who can either be assigned the role of a regular user or 
 an admin (user/admin). Once a user is created, you’ll have the ability to create tasks, 
