@@ -24,19 +24,20 @@ Additionally, there is a feature that simulates sending emails to task assignees
 4. Establishing dependencies
     ```bash
     pip install -r requirements.txt
-
-5. Launch of the FASTapi project
-    ```bash
-   uvicorn main:app --reload
    
-6. follow the link
-    ```bash
-   http://127.0.0.1:8000/docs
-   
-7. Create an .env file in the root of the project and create the following keys in it
+5. Create an .env file in the root of the project and create the following keys in it
 
 SECRET_KEY=a8u5T3j9R4nZ7mL1K2vQ6pX0eW9oB4rY7dV1sF3aC5hR8kL6wJ2iM4uO1tN7xP (make up your own secret key or use mine)
 ALGORITHM=HS256
+
+6. Launch of the FASTapi project
+    ```bash
+   uvicorn main:app --reload
+
+7. follow the link
+    ```bash
+   http://127.0.0.1:8000/docs
+
    
 8. work verification and testing
 
